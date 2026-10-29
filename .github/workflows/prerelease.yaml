@@ -1,0 +1,42 @@
+name: Prerelease (GitHub Package Registry)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: gradle
+      - id: next_version
+        name: Tag prerelease with semver
+        uses: zwaldowski/semver-release-action@a1fcf12dda3d10c122d1d9cb161dece6363c7e19 # v6
+        with:
+          bump: prerelease
+          preid: rc
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish
+        run: ./gradlew -Pversion="$VERSION" check publish
+        env:
+          VERSION: ${{ steps.next_version.outputs.version_tag }}
+          GITHUB_USERNAME: x-access-token
+          GITHUB_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub prerelease
+        run: gh release create "v$VERSION" --title "v$VERSION" --prerelease --generate-notes --target "$GITHUB_SHA"
+        env:
+          VERSION: ${{ steps.next_version.outputs.version_tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
