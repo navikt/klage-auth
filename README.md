@@ -47,6 +47,22 @@ class SecurityConfiguration {
 
 Ikke bruk `spring.security.oauth2.resourceserver.*` i tillegg. Spring Boot ignorerer de innstillingene når appen har sin egen `JwtDecoder`.
 
+## Claims
+
+`currentAzureToken()` gir tokenet for requesten som pågår, eller `null` utenfor en autentisert request. Funksjonen leser security context fra tråden, så den gir `null` i `@Async`-metoder og på andre tråder.
+
+```kotlin
+val token = currentAzureToken()
+token?.navIdent      // NAVident, bare i on-behalf-of-tokens
+token?.displayName   // name
+token?.groups        // groups, tom liste hvis claimen mangler
+token?.callingApp    // azp_name, bare til logging
+token?.tokenValue    // tokenet selv, til on-behalf-of-kall videre
+currentAzureTokenType() // CC, OBO eller UNAUTHENTICATED
+```
+
+Funksjonene kaster ikke unntak når en claim mangler. Appen bestemmer selv hva som skal skje da.
+
 ## Test
 
 ```kotlin
