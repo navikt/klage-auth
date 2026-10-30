@@ -1,6 +1,6 @@
 # klage-auth
 
-Validerer Azure AD-tokens i Spring Boot-appene til team klage. Erstatter token-validation-spring fra token-support.
+Validerer Azure AD-tokens og henter tokens til utgående kall fra Texas i Spring Boot-appene til team klage. Erstatter token-validation-spring og token-client-spring fra token-support.
 
 ## Moduler
 
@@ -62,6 +62,26 @@ currentAzureTokenType() // CC, OBO eller UNAUTHENTICATED
 ```
 
 Funksjonene kaster ikke unntak når en claim mangler. Appen bestemmer selv hva som skal skje da.
+
+## Utgående kall
+
+`TexasClient` henter tokens fra Texas, sidecaren Nais legger ved appen. Texas cacher tokenene, så hent et token for hvert kall og ikke lagre det selv.
+
+```kotlin
+@Bean
+fun texasClient(environment: Environment) = TexasClient(TexasProperties.from(environment))
+```
+
+```kotlin
+texasClient.machineToMachineToken("api://dev-gcp.klage.kabal-file-api/.default")
+texasClient.onBehalfOfCurrentUser("api://dev-fss.teamdokumenthandtering.dokarkiv/.default")
+```
+
+- `machineToMachineToken` gir et token der appen opptrer på egne vegne.
+- `onBehalfOfCurrentUser` veksler tokenet i requesten som pågår. Den feiler hvis requesten ikke har et on-behalf-of-token, så appen faller aldri tilbake til sin egen identitet. Kall den på request-tråden.
+- `onBehalfOfToken(target, userToken)` veksler et token du har fra før.
+
+`TexasProperties.from` leser `NAIS_TOKEN_ENDPOINT` og `NAIS_TOKEN_EXCHANGE_ENDPOINT`. Feil fra Texas gir `TexasException`. Meldingen inneholder aldri tokens.
 
 ## Test
 
