@@ -75,7 +75,8 @@ internal interface TexasApi {
  * Gets tokens for outgoing calls from Texas, the Nais sidecar. Texas caches the tokens until shortly
  * before they expire, so call this for every outgoing request instead of storing the token.
  *
- * `target` is the scope of the receiving app, for example `api://dev-gcp.klage.kabal-file-api/.default`.
+ * `target` is the scope of the receiving app: `api://dev-gcp.klage.kabal-file-api/.default` for
+ * Entra ID, `dev-gcp:klage:klage-lookup` for TokenX.
  */
 public class TexasClient(
     properties: TexasProperties,
@@ -145,6 +146,17 @@ public class TexasClient(
             throw TexasException("The current request has a ${token.tokenType} token, an on-behalf-of token is required.")
         }
         return onBehalfOfToken(target = target, userToken = token.tokenValue)
+    }
+
+    /**
+     * Exchanges the TokenX token of the current request. Fails unless the request carries a TokenX
+     * token for a citizen, so a call never falls back to the app's own identity.
+     *
+     * Reads the thread bound security context, so call it on the request thread, not in `@Async` code.
+     */
+    public fun tokenXExchangeForCurrentUser(target: String): String {
+        val token = currentTokenXToken() ?: throw TexasException("The current request has no TokenX token to exchange.")
+        return onBehalfOfToken(target = target, userToken = token.tokenValue, identityProvider = TexasIdentityProvider.TOKENX)
     }
 
     private fun requestToken(
