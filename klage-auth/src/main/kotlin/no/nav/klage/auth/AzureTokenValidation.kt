@@ -63,13 +63,7 @@ public fun azureTokenValidator(
     DelegatingOAuth2TokenValidator(
         JwtValidators.createDefaultWithIssuer(issuer),
         RequiredClaimsValidator(AZURE_REQUIRED_CLAIMS),
-        OAuth2TokenValidator { jwt ->
-            if (jwt.audience.orEmpty().contains(audience)) {
-                OAuth2TokenValidatorResult.success()
-            } else {
-                OAuth2TokenValidatorResult.failure(invalidToken("The aud claim does not contain this app."))
-            }
-        },
+        AudienceValidator(audience),
         AzpValidator(preAuthorizedClientIds),
     )
 
@@ -84,6 +78,20 @@ public class RequiredClaimsValidator(
             OAuth2TokenValidatorResult.failure(invalidToken("Missing required claims: $missing"))
         }
     }
+}
+
+/**
+ * Only accepts tokens where the aud claim contains [audience], the client id of this app.
+ */
+public class AudienceValidator(
+    private val audience: String,
+) : OAuth2TokenValidator<Jwt> {
+    override fun validate(token: Jwt): OAuth2TokenValidatorResult =
+        if (token.audience.orEmpty().contains(audience)) {
+            OAuth2TokenValidatorResult.success()
+        } else {
+            OAuth2TokenValidatorResult.failure(invalidToken("The aud claim does not contain this app."))
+        }
 }
 
 /**
@@ -116,4 +124,4 @@ public class AzpValidator(
     private fun String.toLoggable(): String = take(MAX_LOGGED_LENGTH).replace(regex = UNSAFE_LOG_CHARACTERS, replacement = "?")
 }
 
-private fun invalidToken(description: String) = OAuth2Error(OAuth2ErrorCodes.INVALID_TOKEN, description, null)
+internal fun invalidToken(description: String) = OAuth2Error(OAuth2ErrorCodes.INVALID_TOKEN, description, null)

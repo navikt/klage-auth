@@ -119,6 +119,36 @@ class TexasClientTest {
     }
 
     @Test
+    fun `TokenX exchange for current user exchanges the token of the request`() {
+        authenticate(TokenXClaimNames.PID to "12345678910")
+        expectTokenRequest(
+            EXCHANGE_ENDPOINT,
+            "identity_provider" to "tokenx",
+            "target" to "dev-gcp:klage:klage-lookup",
+            "user_token" to "incoming-token",
+        )
+
+        assertThat(client.tokenXExchangeForCurrentUser("dev-gcp:klage:klage-lookup")).isEqualTo("outgoing-token")
+        server.verify()
+    }
+
+    @Test
+    fun `TokenX exchange for current user fails for an Azure token`() {
+        authenticate(AzureClaimNames.NAV_IDENT to "Z123456")
+
+        assertThatThrownBy { client.tokenXExchangeForCurrentUser("dev-gcp:klage:klage-lookup") }
+            .isInstanceOf(TexasException::class.java)
+        server.verify()
+    }
+
+    @Test
+    fun `TokenX exchange for current user fails outside an authenticated request`() {
+        assertThatThrownBy { client.tokenXExchangeForCurrentUser("dev-gcp:klage:klage-lookup") }
+            .isInstanceOf(TexasException::class.java)
+        server.verify()
+    }
+
+    @Test
     fun `on-behalf-of rejects a blank user token`() {
         assertThatThrownBy { client.onBehalfOfToken(target = TARGET, userToken = " ") }
             .isInstanceOf(IllegalArgumentException::class.java)
