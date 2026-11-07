@@ -2,6 +2,10 @@ plugins {
     `kotlin-dsl`
 }
 
+kotlin {
+    jvmToolchain(25)
+}
+
 // Plugin versions for the whole build. The modules apply the plugins by id only.
 val kotlinVersion = "2.4.20"
 val ktlintPluginVersion = "14.2.0"
