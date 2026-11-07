@@ -34,7 +34,7 @@ dependencies {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
     withSourcesJar()
 }
@@ -42,7 +42,6 @@ java {
 kotlin {
     explicitApi()
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_21)
         freeCompilerArgs.add("-Xjsr305=strict")
     }
 }
@@ -89,7 +88,7 @@ tasks.named("detekt") {
 }
 
 tasks.withType<Detekt>().configureEach {
-    jvmTarget.set(JvmTarget.JVM_21.target)
+    jvmTarget.set(JvmTarget.JVM_25.target)
     reports {
         html.required.set(true)
         checkstyle.required.set(true)
