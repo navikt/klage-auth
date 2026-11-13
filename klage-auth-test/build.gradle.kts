@@ -2,7 +2,7 @@ plugins {
     id("klage-auth.spring-test-conventions")
 }
 
-val mockOauth2ServerVersion = "6.1.4"
+val mockOauth2ServerVersion = "6.1.5"
 
 dependencies {
     api(project(":klage-auth"))
